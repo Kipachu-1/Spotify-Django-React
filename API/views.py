@@ -1,5 +1,8 @@
 from django.shortcuts import render
 from rest_framework import generics
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from . import YouSearch
 from . import models
 from . import serializers
 
@@ -24,3 +27,9 @@ class TrackInfo(generics.RetrieveAPIView):
 class ArtistInfo(generics.RetrieveAPIView):
     queryset = models.Artist.objects.all()
     serializer_class = serializers.ArtistSerializer
+    
+    
+@api_view(['GET'])
+def search(request, query):
+    data = YouSearch.search(query)
+    return Response(data=data['items'])

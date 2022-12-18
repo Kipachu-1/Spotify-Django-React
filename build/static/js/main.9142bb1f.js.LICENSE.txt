@@ -1,9 +1,3 @@
-/*!
-	Copyright (c) 2018 Jed Watson.
-	Licensed under the MIT License (MIT), see
-	http://jedwatson.github.io/classnames
-*/
-
 /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */
 
 /**
@@ -47,13 +41,6 @@
  */
 
 /**
- * @name react-jinke-music-player
- * @description Maybe the best beautiful HTML5 responsive player component for react :)
- * @author Jinke.Li <1359518268@qq.com>
- * @license MIT
- */
-
-/**
  * @remix-run/router v1.0.3
  *
  * Copyright (c) Remix Software Inc.
@@ -75,9 +62,7 @@
  * @license MIT
  */
 
-/**!
- * Sortable 1.15.0
- * @author	RubaXa   <trash@rubaxa.org>
- * @author	owenm    <owen23355@gmail.com>
- * @license MIT
- */
+/**
+* @link https://github.com/gajus/sister for the canonical source repository
+* @license https://github.com/gajus/sister/blob/master/LICENSE BSD 3-Clause
+*/

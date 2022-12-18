@@ -6,4 +6,5 @@ urlpatterns = [
     path('playlist/<int:pk>', views.PlaylistInfo.as_view()),
     path('track/<int:pk>', views.TrackInfo.as_view()),
     path('artist/<int:pk>', views.ArtistInfo.as_view()),
+    path('search/<str:query>', views.search),
 ]

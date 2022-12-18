@@ -49,3 +49,5 @@ class ArtistSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.Artist
         fields = ['name', 'avatar', 'uni_id', 'track']
+        
+        
