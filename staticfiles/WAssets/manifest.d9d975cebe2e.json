@@ -18,7 +18,8 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "./index.html",
+  "scope": "https://spotify-django-react-production.up.railway.app/",
+  "start_url": "https://spotify-django-react-production.up.railway.app/",
   "display": "standalone",
   "theme_color": "#000000",
   "background_color": "#ffffff"
