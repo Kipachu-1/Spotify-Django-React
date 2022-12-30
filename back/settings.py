@@ -15,6 +15,13 @@ SECRET_KEY = 'django-insecure-n^2x@hs*_0k*3m+r5!48p+pup^6np+g$wp3y@bg6w1@040v=(e
 DEBUG = True
 CSRF_TRUSTED_ORIGINS = ["https://spotify-django-react-production.up.railway.app"]
 ALLOWED_HOSTS = ['*']
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ORIGIN_ALLOW_ALL = True
+
+CORS_ALLOW_CREDENTIALS = True
+
+CSRF_COOKIE_SECURE = False
 
 # Application definition
 
