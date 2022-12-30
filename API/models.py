@@ -1,31 +1,48 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser, User
 from . import musicID
+from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from rest_framework.authtoken.models import Token
 
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_auth_token(sender, instance=None, created=False, **kwargs):
+    UserSetting.objects.get_or_create(user=instance, uni_id=musicID.UserID())
+    User_Playlists.objects.get_or_create(user=instance, uni_id=musicID.playlist_id())
+    if created:
+        Token.objects.create(user=instance)
+
+class UserSetting(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='UserSetting')
+    uni_id = models.CharField(max_length=100)
+    
+    
 class Artist(models.Model):
-    User = models.ForeignKey(User, on_delete=models.PROTECT)
     name = models.CharField(max_length = 100)
     uni_id = models.CharField(max_length = 20)
     monthly_listeners = models.IntegerField()
     avatar = models.ImageField(upload_to='images/')
-    
     created = models.DateTimeField(auto_now_add=True)
 
-
 class Track(models.Model):   
-    artist = models.ForeignKey(Artist, on_delete=models.PROTECT, related_name='track')
+    artist = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     track = models.FileField(upload_to='tracks/', null=True, blank=True)
     uni_id = models.CharField(max_length=20, null=True, default=musicID.music_id())
-    thumnail = models.ImageField(upload_to='images/', null=True, blank=True)
+    thumbnail = models.URLField()
     genre = models.CharField(max_length=30, default='song')
-    
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
+    
+    
+    def __str__(self) -> str:
+        return self.name
 
 class LikedSongs(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    musics = models.ManyToManyField(Track)
+    tracks = models.ManyToManyField(Track)
     uni_id = models.CharField(max_length=30)
     
 class FollowedArtist(models.Model):
@@ -41,9 +58,11 @@ class Playlist(models.Model):
     tracks = models.ManyToManyField(Track)
     public = models.BooleanField(default=True)
     uni_id = models.CharField(max_length=30, null=True)
-    thumnail = models.ImageField(default="images\R_Fjojo2y.jpg", upload_to='images/', null=True)
+    cover = models.ImageField(default="images\R_Fjojo2y.jpg", upload_to='images/', null=True)
+    
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
+    
     
 
 class User_Playlists(models.Model):

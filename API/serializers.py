@@ -1,16 +1,13 @@
 from rest_framework import serializers
 from . import models
+from django.contrib.auth.models import User
+from rest_framework.authtoken.models import Token
 
 class TrackSerializer(serializers.ModelSerializer):
-    singer = serializers.CharField(source='artist.name')
-    artist_id = serializers.IntegerField(source='artist.pk')
-    artist_uniid = serializers.CharField(source='artist.uni_id')
-    musicSrc = serializers.ImageField(source='track')
-    cover = serializers.ImageField(source='thumnail')
-    
+    TrackId = serializers.CharField(source='uni_id')
     class Meta:
         model = models.Track
-        fields = ['name', 'musicSrc', 'cover', 'singer', 'id', 'uni_id', 'artist_uniid', 'artist_id']
+        fields = ['name', 'thumbnail', 'artist', 'TrackId', 'pk']
         
 class TrackFullSerializer(serializers.ModelSerializer):
     singer = serializers.CharField(source='artist.name')
@@ -23,17 +20,19 @@ class TrackFullSerializer(serializers.ModelSerializer):
         
 
 class PlaylistListSerializer(serializers.ModelSerializer):
+    creator = serializers.CharField(source='creator.username')
     class Meta:
         model = models.Playlist
-        fields = ['name', 'thumnail', 'uni_id', 'pk']
+        fields = ['name', 'cover', 'uni_id', 'pk', 'creator']
 
 
 class PlaylistSerializer(serializers.ModelSerializer):
     tracks = TrackSerializer(read_only=True, many=True)
     class Meta:
         model = models.Playlist
-        fields = ['name', 'thumnail', 'description','uni_id', 'tracks']
+        fields = ['name', 'cover', 'description','uni_id', 'tracks']
         
+              
 
 
 class TrackArtistSerializer(serializers.HyperlinkedModelSerializer):
@@ -49,5 +48,22 @@ class ArtistSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.Artist
         fields = ['name', 'avatar', 'uni_id', 'track']
+        
+        
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'password']
+    
+    def createUser(self):
+        user = User.objects.create(username=self.data['username'], password=self.data['password'])
+        token, created = Token.objects.get_or_create(user=user)
+        return {
+            'token': token.key,
+            'user_id': user.pk,
+            'uni_id':user.UserSetting.first().uni_id,
+        }
+        
+    
         
         
