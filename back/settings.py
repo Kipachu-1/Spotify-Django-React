@@ -15,13 +15,6 @@ SECRET_KEY = 'django-insecure-n^2x@hs*_0k*3m+r5!48p+pup^6np+g$wp3y@bg6w1@040v=(e
 DEBUG = True
 CSRF_TRUSTED_ORIGINS = ["https://spotify-django-react-production.up.railway.app"]
 ALLOWED_HOSTS = ['*']
-CORS_ALLOW_CREDENTIALS = True
-
-CORS_ORIGIN_ALLOW_ALL = True
-
-CORS_ALLOW_CREDENTIALS = True
-
-CSRF_COOKIE_SECURE = False
 
 # Application definition
 
@@ -116,10 +109,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.1/howto/static-files/
-
 STATIC_URL = '/static/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 MEDIA_URL = '/media/'
@@ -127,9 +116,6 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'build/static/')]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 db_from_env = dj_database_url.config(conn_max_age=500)
