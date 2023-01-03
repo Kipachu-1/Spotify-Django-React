@@ -8,10 +8,10 @@ from django.contrib.auth.models import User
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from rest_framework.authentication import TokenAuthentication
-from . import YouSearch
-from . import models
-from . import serializers
-from . import musicID
+from rest_framework.parsers import MultiPartParser
+from . import YouSearch, models,serializers,musicID
+from django.db.models import Q
+
 
 class TrackList(generics.ListAPIView):
     queryset = models.Track.objects.all()
@@ -35,8 +35,10 @@ class ArtistInfo(generics.RetrieveAPIView):
     serializer_class = serializers.ArtistSerializer
    
    
+   
 class UserPlaylist(APIView):
     authentication_classes = [TokenAuthentication]
+    parser_classes = [MultiPartParser]
     def get(self, request, format=None):
         playlists = models.User_Playlists.objects.get(user=request.user).playlists.all()
         serializer = serializers.PlaylistListSerializer(data=playlists, many=True,  context={'request': request})
@@ -47,19 +49,32 @@ class UserPlaylist(APIView):
         data = request.data
         if data['action'] == 'create':
             playlist = models.Playlist.objects.create(uni_id=musicID.playlist_id(),name=data['name'],
-                                                      creator=request.user, cover=data['cover'], description=data['description'])
+                                                      creator=request.user)
             models.User_Playlists.objects.get(user=request.user).playlists.add(playlist)  
             return Response(data={'message': 'OK'})
         elif data['action'] == 'add':
             playlist = models.Playlist.objects.get(uni_id=data['playlist_id'])
             models.User_Playlists.objects.get(user=request.user).playlists.add(playlist)  
             return Response(data={'message': 'OK'})
-              
-
+        elif data['action'] == 'delete':
+            try:
+                playlist = models.Playlist.objects.get(uni_id=data['playlist_id'], creator=request.user)
+                playlist.delete()
+                return Response(data={'message':'Playlist was deleted'})
+            except:
+                return Response(data={'message':'Playlist was not deleted, error.'})
+        elif data['action'] == 'update':
+            playlist = models.Playlist.objects.get(uni_id=data['playlist_id'])
+            if 'cover' in data:
+                playlist.cover = data['cover']
+            if 'name' in data:
+                playlist.name = data['name']
+            if 'description' in data:
+                playlist.description = data['description']
+            playlist.save()
+            return Response({'message':'OK'})
+            
 class TrackPlaylist(APIView):
-    
-    
-    
     def post(self, request, format=None):
         data = request.data
         playlist = models.Playlist.objects.get(uni_id=data['playlist_id'])
@@ -78,6 +93,7 @@ class UserLikedTracks(APIView):
         liked_songs = models.LikedSongs.objects.get(user=request.user).tracks.all()
         serializersongs = serializers.TrackSerializer(data=liked_songs, many=True)
         serializersongs.is_valid()
+        return Response(data={"tracks":serializersongs.data})
         
     def post(self, request, format=None):
         data = request.data
@@ -115,6 +131,11 @@ def login(request):
     
 @api_view(['GET'])
 def search(request, query):
+    if request.GET.get('playlist') == '1':
+        playlists = models.Playlist.objects.filter(Q(name__icontains=query), public=True)
+        serializer = serializers.PlaylistListSerializer(data=playlists, many=True, context={'request': request})
+        serializer.is_valid()
+        return Response({'type':'playlist', 'playlists':serializer.data})
     data = YouSearch.search(query)
     return Response(data=data['items'])
 
@@ -139,8 +160,11 @@ class CustomAuthToken(ObtainAuthToken):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
+        tracks, created = models.LikedSongs.objects.get_or_create(user=user)
+        serialized_tracks = serializers.TokenLikedTracks(data=tracks.tracks.all(), many=True)
+        serialized_tracks.is_valid()
         return Response({
             'token': token.key,
-            'user_id': user.pk,
-            'uni_id':user.UserSetting.first().uni_id,
+            'username': user.username,
+            'tracks' : serialized_tracks.data
         })

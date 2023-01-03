@@ -20,7 +20,7 @@ def playlist_id():
     characterList += string.digits
  
     id = []
-    for i in range(30):
+    for i in range(20):
         randomchar = random.choice(characterList)
         
         id.append(randomchar)

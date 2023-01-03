@@ -9,4 +9,5 @@ admin.site.register(models.Artist)
 admin.site.register(models.Album)
 admin.site.register(models.history)
 admin.site.register(models.FollowedArtist)
+admin.site.register(models.UserSetting)
 

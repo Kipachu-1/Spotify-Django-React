@@ -11,8 +11,5 @@ def search(query):
     'videoCategory':'10',
     'maxResults': '20',
     }
-
-
     response = requests.get(base_url, params=params)
-
     return response.json()

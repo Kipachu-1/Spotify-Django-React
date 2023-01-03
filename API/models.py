@@ -11,8 +11,10 @@ from rest_framework.authtoken.models import Token
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     UserSetting.objects.get_or_create(user=instance, uni_id=musicID.UserID())
     User_Playlists.objects.get_or_create(user=instance, uni_id=musicID.playlist_id())
+    LikedSongs.objects.get_or_create(user=instance, uni_id=musicID.playlist_id())
     if created:
         Token.objects.create(user=instance)
+
 
 class UserSetting(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='UserSetting')
@@ -60,8 +62,12 @@ class Playlist(models.Model):
     uni_id = models.CharField(max_length=30, null=True)
     cover = models.ImageField(default="images\R_Fjojo2y.jpg", upload_to='images/', null=True)
     
+    
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self) -> str:
+        return self.name
     
     
 

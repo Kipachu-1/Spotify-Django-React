@@ -28,9 +28,10 @@ class PlaylistListSerializer(serializers.ModelSerializer):
 
 class PlaylistSerializer(serializers.ModelSerializer):
     tracks = TrackSerializer(read_only=True, many=True)
+    creator = serializers.CharField(source='creator.username')
     class Meta:
         model = models.Playlist
-        fields = ['name', 'cover', 'description','uni_id', 'tracks']
+        fields = ['name', 'cover', 'description','uni_id', 'tracks', 'creator']
         
               
 
@@ -63,7 +64,18 @@ class UserSerializer(serializers.ModelSerializer):
             'user_id': user.pk,
             'uni_id':user.UserSetting.first().uni_id,
         }
-        
-    
+
+
+
+class TokenPlaylists(serializers.ModelSerializer):
+    class Meta:
+        model = models.Playlist
+        fields = ['uni_id']
+
+
+class TokenLikedTracks(serializers.ModelSerializer):
+    class Meta:
+        model = models.Track
+        fields = ['uni_id']
         
         
