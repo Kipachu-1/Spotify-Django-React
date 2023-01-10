@@ -10,13 +10,11 @@ class TrackSerializer(serializers.ModelSerializer):
         fields = ['name', 'thumbnail', 'artist', 'TrackId', 'pk']
         
 class TrackFullSerializer(serializers.ModelSerializer):
-    singer = serializers.CharField(source='artist.name')
-    artist_thumnail = serializers.ImageField(source='artist.avatar')
-    musicSrc = serializers.ImageField(source='track')
-    cover = serializers.ImageField(source='thumnail')
+    TrackId = serializers.CharField(source='uni_id')
+    cover = serializers.ImageField(source='thumbnail')
     class Meta:
         model = models.Track
-        fields = ['name', 'musicSrc', 'cover', 'singer', 'artist_thumnail', 'id']  
+        fields = ['name', 'cover', 'artist', 'TrackId', 'pk']  
         
 
 class PlaylistListSerializer(serializers.ModelSerializer):
@@ -64,18 +62,6 @@ class UserSerializer(serializers.ModelSerializer):
             'user_id': user.pk,
             'uni_id':user.UserSetting.first().uni_id,
         }
-
-
-
-class TokenPlaylists(serializers.ModelSerializer):
-    class Meta:
-        model = models.Playlist
-        fields = ['uni_id']
-
-
-class TokenLikedTracks(serializers.ModelSerializer):
-    class Meta:
-        model = models.Track
-        fields = ['uni_id']
+        
         
         

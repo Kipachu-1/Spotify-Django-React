@@ -8,10 +8,10 @@ from django.contrib.auth.models import User
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import MultiPartParser, FormParser
 from . import YouSearch, models,serializers,musicID
 from django.db.models import Q
-
+from django.views.decorators.cache import cache_page
 
 class TrackList(generics.ListAPIView):
     queryset = models.Track.objects.all()
@@ -20,10 +20,15 @@ class TrackList(generics.ListAPIView):
 class PlaylistList(generics.ListAPIView):
     queryset = models.Playlist.objects.all()
     serializer_class = serializers.PlaylistListSerializer
+
+playlist_list_view = cache_page(1800)(PlaylistList.as_view())
     
 class PlaylistInfo(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Playlist.objects.all()
     serializer_class = serializers.PlaylistSerializer
+
+playlist_info_view = cache_page(10)(PlaylistInfo.as_view())
+    
     
 class TrackInfo(generics.RetrieveAPIView):
     queryset = models.Track.objects.all()
@@ -39,11 +44,13 @@ class ArtistInfo(generics.RetrieveAPIView):
 class UserPlaylist(APIView):
     authentication_classes = [TokenAuthentication]
     parser_classes = [MultiPartParser]
+    
+    
     def get(self, request, format=None):
         playlists = models.User_Playlists.objects.get(user=request.user).playlists.all()
         serializer = serializers.PlaylistListSerializer(data=playlists, many=True,  context={'request': request})
         serializer.is_valid()
-        return Response(data={'playlists':serializer.data})
+        return Response({'playlists':serializer.data})
 
     def post(self, request, format=None):
         data = request.data
@@ -73,20 +80,42 @@ class UserPlaylist(APIView):
                 playlist.description = data['description']
             playlist.save()
             return Response({'message':'OK'})
+        elif data['action'] == 'remove':
+            playlist = models.Playlist.objects.get(uni_id=data['playlist_id'])
+            playlists = models.User_Playlists.objects.get(user=request.user).playlists
+            playlists.remove(playlist.pk)
+            return Response({'message':'OK'})
+            
+            
             
 class TrackPlaylist(APIView):
     def post(self, request, format=None):
         data = request.data
-        playlist = models.Playlist.objects.get(uni_id=data['playlist_id'])
-        track = models.Track.objects.get_or_create(uni_id=data['id'], name=data['name'], thumbnail=data['cover'], artist=data['artist'])
-        playlist.tracks.add(models.Track.objects.get(uni_id=data['id']))
-        return Response(data={'message': 'OK'})
+        if data['action'] == 'add':
+            playlist = models.Playlist.objects.get(uni_id=data['playlist_id'])
+            track = models.Track.objects.get_or_create(uni_id=data['id'], name=data['name'], thumbnail=data['cover'], artist=data['artist'])
+            playlist.tracks.add(models.Track.objects.get(uni_id=data['id']))
+            return Response(data={'message': 'OK'})
+        elif data['action'] == 'remove':
+            playlist = models.Playlist.objects.get(uni_id=data['playlist_id'])
+            track = models.Track.objects.get(uni_id=data['id'])
+            playlist.tracks.remove(track)
+            return Response(data={'message': 'OK'})
+            
         
         
-    
-    
-    
-    
+class FileUploadView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+    def post(self, request,  format=None):
+        track = models.Track.objects.get(pk=1)
+        file = request.data['file']
+        track.track = file
+        track.save()
+        return Response({"message": "File received"})     
+        
+        
+        
+        
 class UserLikedTracks(APIView):
     authentication_classes = [TokenAuthentication]  
     def get(self, request, format=None):
@@ -97,9 +126,16 @@ class UserLikedTracks(APIView):
         
     def post(self, request, format=None):
         data = request.data
-        track = models.Track.objects.get_or_create(uni_id=data['id'], name=data['name'], thumbnail=data['cover'], artist=data['artist'])
+        try:
+            track = models.Track.objects.get(uni_id=data['id'])
+        except:
+            track = models.Track.objects.create(uni_id=data['id'], name=data['name'], thumbnail=data['cover'], artist=data['artist'])
+        
         liked_songs = models.LikedSongs.objects.get(user=request.user).tracks
-        liked_songs.add(models.Track.objects.get(uni_id=data['id']))
+        if data['action']== 'add':
+            liked_songs.add(models.Track.objects.get(uni_id=data['id']))
+        elif data['action'] == 'remove':
+            liked_songs.remove(models.Track.objects.get(uni_id=data['id']))
         return Response({'message':'OK'})
 
             
@@ -142,13 +178,33 @@ def search(request, query):
 
 
 @api_view(['POST'])
-def addTrackPlaylist(request):
+def ActionTrackPlaylist(request):
     data = request.data
-    track = models.Track.objects.get_or_create(uni_id=data['id'],name=data['name'], thumbnail=data['cover'], artist=data['artist'])
-    playlist = models.Playlist.objects.get(id=1)
-    playlist.tracks.add(models.Track.objects.get(uni_id=data['id']))
-    return Response({'message':'OK'})
+    if data['action'] == 'remove':
+        playlist = models.Playlist.objects.get(uni_id=data['playlist_id'])
+        track = models.Track.objects.get(uni_id=data['track_id'])
+        playlist.tracks.remove(track.pk)
+        return Response({'message': 'OK'})
+    if data['action'] == 'add':
+        playlist = models.Playlist.objects.get(uni_id=data['playlist_id'])
+        track = models.Track.objects.get(uni_id=data['track_id'])
+        playlist.tracks.add(track.pk)
+        return Response({'message': 'OK'})
 
+
+class MeData(APIView):
+    authentication_classes = [TokenAuthentication]  
+    
+    def get(sefl, request, format=None):
+        playlists = models.User_Playlists.objects.get(user=request.user).playlists.all()
+        Ltracks = models.LikedSongs.objects.get(user=request.user).tracks.all()
+        serialized_playlists = serializers.PlaylistListSerializer(data=playlists, many=True)
+        serialized_tracks = serializers.TrackSerializer(data=Ltracks, many=True)
+        serialized_playlists.is_valid()
+        serialized_tracks.is_valid()
+        return Response(data={'playlists':serialized_playlists.data, 'tracks':serialized_tracks.data})
+        
+        
 
 
     
@@ -160,11 +216,11 @@ class CustomAuthToken(ObtainAuthToken):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
-        tracks, created = models.LikedSongs.objects.get_or_create(user=user)
-        serialized_tracks = serializers.TokenLikedTracks(data=tracks.tracks.all(), many=True)
-        serialized_tracks.is_valid()
         return Response({
             'token': token.key,
-            'username': user.username,
-            'tracks' : serialized_tracks.data
+            'username': user.username, 
         })
+        
+        
+        
+        
